@@ -40,16 +40,22 @@ while epoch_count < n_epochs:
         temp = torch.empty(BATCH_SIZE,128).normal_(0,0.5)
         noise = normalize(temp,(torch.min(temp),torch.max(temp)),(-1,1)).float()
 
-        fake_image_batch = netG(noise).detach()
+        fake_image_batch = netG(noise)
         real_image_batch = normalize(data, (0,1),(-1,1))
         # Optimize Discriminator
-        D_fake_batch = D(fake_image_batch)
+        netD.zero_grad()
+        D_fake_batch = D(fake_image_batch.detach())
         D_real_batch = D(real_image_batch)
         D_real_loss = loss_fn(D_real_batch, real_label)
         D_fake_loss = loss_fn(D_fake_batch, fake_label)
         D_loss = (D_real_loss + D_fake_loss)
         D_loss.backward()
         optimD.step()
-        #TODO: Optimize Generator
-
+        # Optimize Generator
+        netG.zero_grad()
+        D_out = netD(fake_image_batch)
+        G_loss = loss_fn(D_out, real_label)
+        G_loss.backward()
+        optimG.step()
+        
     epoch_count += 1
